@@ -49,8 +49,6 @@ def getListOfDaysFrom(startDay, rng):
 
 def getWeekdays(startDay, rng):
     ''' Gets only the weekdays from startDay for a length of rng days '''
-    # TODO: Add filtering for holidays.
-
     return removeHolidays(filter(lambda x: isWeekday(x), getListOfDaysFrom(startDay, rng)))
 
 # ===== Chouseisan related =====
@@ -70,7 +68,7 @@ def makeChouseisan(listOfDays, autosubmit=True):
         browser.find_by_id("createBtn").first.click()
 
     while len(browser.windows) > 0:
-        pass
+        time.sleep(10)
 
 # ===== Helper =====
 def parseFileToTwoDList(fp):
