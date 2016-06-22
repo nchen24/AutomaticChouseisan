@@ -21,7 +21,7 @@ jDays = [ur"月",
          ur"土",
          ur"日"]
 
-defaultStartTime = "20:30"
+autoSubmit = False
 
 # ===== Holiday ====
 API_KEY = 'AIzaSyCiD3By0rW9zsJGs9NVxTGJgVZykgnzJYQ' # chen_nicholas
@@ -117,13 +117,13 @@ def main():
 
     if args.days == "all":
         makeChouseisan(getListOfDaysFrom(args.startday, args.range),
-                       args.weekdaystart, args.weekendstart, False)
+                       args.weekdaystart, args.weekendstart, autoSubmit)
     elif args.days == "weekday":
         makeChouseisan(getWeekdays(args.startday, args.range),
-                       args.weekdaystart, args.weekendstart, False)
+                       args.weekdaystart, args.weekendstart, autoSubmit)
     elif args.days == "weekend":
         makeChouseisan(getWeekends(args.startday, args.range),
-                       args.weekdaystart, args.weekendstart, False)
+                       args.weekdaystart, args.weekendstart, autoSubmit)
 
 if __name__ == "__main__":
     main()
