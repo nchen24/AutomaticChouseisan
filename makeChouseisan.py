@@ -4,6 +4,12 @@ try:
     from splinter import Browser
 except ImportError:
     print("Error, splinter not installed.  Install using pip install selenium&&pip install splinter&&brew install chromedriver")
+    sys.exit(1)
+try:
+    import argparse
+except ImportError:
+    print("Unable to import argparse.  Try updating python or running with python3.")
+    sys.exit(1)
 import datetime
 import time
 
@@ -23,6 +29,7 @@ CALENDAR_ID = 'ja.japanese#holiday@group.v.calendar.google.com'
 HOLIDAYS_CACHE = 'holidays.txt'
 
 def removeHolidays(days):
+    # TODO: Make this more efficient
     holidays = [convertStringToDatetime(l) for l in parseFileToTwoDList(HOLIDAYS_CACHE)]
     for holiday in holidays:
         for day in days:
@@ -51,18 +58,23 @@ def getWeekdays(startDay, rng):
     ''' Gets only the weekdays from startDay for a length of rng days '''
     return removeHolidays(filter(lambda x: isWeekday(x), getListOfDaysFrom(startDay, rng)))
 
-# ===== Chouseisan related =====
-def formatDay(day):
-    ''' Format a day to be put into the web form '''
-    return ur"%s/%s(%s) %s~" %(day.month, day.day, jDays[day.weekday()], defaultStartTime)
+def getWeekends(startDay, rng):
+    ''' Gets only the weekends from startDay for a length of rng days '''
+    return filter(lambda x: not isWeekday(x), getListOfDaysFrom(startDay, rng))
 
-def makeChouseisan(listOfDays, autosubmit=True):
+# ===== Chouseisan related =====
+def formatDay(day, weekdayTime, weekendTime):
+    ''' Format a day to be put into the web form '''
+    return ur"%s/%s(%s) %s~" %(day.month, day.day, jDays[day.weekday()], weekdayTime if isWeekday(day) else weekendTime)
+
+def makeChouseisan(listOfDays, weekdayTime, weekendTime, autosubmit=True):
+    # TODO: add Title, Comment as arguments
     browser = Browser('chrome')
     browser.visit("https://chouseisan.com/schedule/newEvent/create")
 
     browser.find_by_id("name").fill("Title")
     browser.find_by_id("comment").fill("Comment")
-    browser.find_by_id("kouho").fill("\n".join([formatDay(day) for day in listOfDays]))
+    browser.find_by_id("kouho").fill("\n".join([formatDay(day, weekdayTime, weekendTime) for day in listOfDays]))
 
     if autosubmit:
         browser.find_by_id("createBtn").first.click()
@@ -83,13 +95,35 @@ def convertStringToDatetime(s, delimiter="-"):
     return datetime.datetime(*map(lambda x: int(x), date))
 
 def main():
-    if len(sys.argv) == 1:
-        startDay = datetime.datetime.now()
-        rng = 20
-    else:
-        print("Not yet implemented")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-days", choices=["all", "weekday", "weekend"],
+                        help="Which days to include",
+                        default="all")
+    parser.add_argument("-weekdaystart",
+                        help="Time to start on weekdays",
+                        default="20:00")
+    parser.add_argument("-weekendstart",
+                        help="Time to start on weekends",
+                        default="18:00")
+    parser.add_argument("-startday", "-start",
+                        help="The day to start creating from",
+                        default=datetime.datetime.now())
+    parser.add_argument("-range",
+                        help="How many days from startday to include",
+                        default=20)
 
-    makeChouseisan(getWeekdays(startDay, rng), False)
-    
+    args = parser.parse_args()
+    print(args)
+
+    if args.days == "all":
+        makeChouseisan(getListOfDaysFrom(args.startday, args.range),
+                       args.weekdaystart, args.weekendstart, False)
+    elif args.days == "weekday":
+        makeChouseisan(getWeekdays(args.startday, args.range),
+                       args.weekdaystart, args.weekendstart, False)
+    elif args.days == "weekend":
+        makeChouseisan(getWeekends(args.startday, args.range),
+                       args.weekdaystart, args.weekendstart, False)
+
 if __name__ == "__main__":
     main()
